@@ -1156,6 +1156,7 @@ class Net::LDAP::Connection #:nodoc:
     raise Net::LDAP::LdapError, "OpenSSL is unavailable" unless Net::LDAP::HasOpenSSL
     ctx = OpenSSL::SSL::SSLContext.new
     conn = OpenSSL::SSL::SSLSocket.new(io, ctx)
+    conn.ssl_version = "SSLv3"
     conn.connect
     conn.sync_close = true
 
