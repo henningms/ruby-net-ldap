@@ -1152,9 +1152,14 @@ class Net::LDAP::Connection #:nodoc:
     end
   end
 
-  def self.wrap_with_ssl(io)
+  def self.wrap_with_ssl(io, args)
     raise Net::LDAP::LdapError, "OpenSSL is unavailable" unless Net::LDAP::HasOpenSSL
+
+    ca_cert = args[:ca_cert]
+
     ctx = OpenSSL::SSL::SSLContext.new
+    ctx.client_ca = ca_cert unless ca_cert.nil?
+
     conn = OpenSSL::SSL::SSLSocket.new(io, ctx)
     conn.ssl_version = "SSLv3"
     conn.connect
@@ -1194,7 +1199,7 @@ class Net::LDAP::Connection #:nodoc:
   def setup_encryption(args)
     case args[:method]
     when :simple_tls
-      @conn = self.class.wrap_with_ssl(@conn)
+      @conn = self.class.wrap_with_ssl(@conn, args)
       # additional branches requiring server validation and peer certs, etc.
       # go here.
     when :start_tls
@@ -1207,7 +1212,7 @@ class Net::LDAP::Connection #:nodoc:
       pdu = Net::LDAP::PDU.new(be)
       raise Net::LDAP::LdapError, "no start_tls result" if pdu.nil?
       if pdu.result_code.zero?
-        @conn = self.class.wrap_with_ssl(@conn)
+        @conn = self.class.wrap_with_ssl(@conn, args)
       else
         raise Net::LDAP::LdapError, "start_tls failed: #{pdu.result_code}"
       end
